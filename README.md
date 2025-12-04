@@ -1,6 +1,6 @@
 # ZipherX Boost Files
 
-Public repository containing bootstrap files for [ZipherX](https://github.com/peerchemist/ZipherX) - a privacy-focused Zclassic (ZCL) wallet.
+Public repository containing bootstrap files for [ZipherX](https://github.com/VictorLux/ZipherX) - a privacy-focused Zclassic (ZCL) wallet.
 
 ## Contents
 
@@ -60,4 +60,4 @@ This repository contains pre-computed blockchain data for convenience. Users are
 
 ---
 
-*Part of the [ZipherX](https://github.com/peerchemist/ZipherX) project*
+*Part of the [ZipherX](https://github.com/VictorLux/ZipherX) project*
