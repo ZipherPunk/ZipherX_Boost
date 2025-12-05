@@ -1,0 +1,13 @@
+{
+  "version": 3,
+  "block_hashes": {
+    "file": "block_hashes.bin",
+    "sha256": "54cf610474b5b7af65ed257cb45f7a68a179c0194508fc280e01b5c75998ed13",
+    "count": 2449154,
+    "start_height": 476969,
+    "end_height": 2926122,
+    "file_size": 78372944,
+    "updated_at": "2025-12-05T03:17:48.106020+00:00"
+  },
+  "height": 2926122
+}
