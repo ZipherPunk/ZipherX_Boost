@@ -18,3 +18,10 @@
 # Build artifacts
 build/
 dist/
+
+# Large files (only in GitHub Releases, not in git repo)
+# The uncompressed CMU file is ~33 MB, only include .zst compressed version
+commitment_tree.bin
+
+# Backups directory
+backups/
