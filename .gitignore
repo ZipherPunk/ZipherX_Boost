@@ -8,6 +8,7 @@
 *.bak
 *.swp
 *~
+temp_*.bin
 
 # IDE
 .idea/
@@ -19,17 +20,28 @@
 build/
 dist/
 
-# Large files (only in GitHub Releases, not in git repo)
-# The uncompressed CMU file is ~33 MB, only include .zst compressed version
-commitment_tree.bin
-
 # Backups directory
 backups/
 
-# Large files - distributed via GitHub Releases only
+# ===========================================
+# LEGACY FILES (no longer used)
+# All data is now in unified zipherx_boost_v1.bin
+# ===========================================
 block_hashes.bin
 block_timestamps.bin
+block_timestamps_manifest.json
 commitment_tree.bin
 commitment_tree.bin.zst
+commitment_tree_manifest.json
+commitment_tree_serialized.bin
+manifest.json
+reliable_peers.json
 shielded_outputs.bin
 shielded_outputs.bin.zst
+shielded_outputs_manifest.json
+
+# ===========================================
+# UNIFIED BOOST FILE
+# Distributed via GitHub Releases only (496 MB)
+# ===========================================
+zipherx_boost_v1.bin

@@ -1,0 +1,2 @@
+9d9e36a3d87cb1f4a72a68d4745655c9e1dd86f77db683abec7a5dfc10ad0d3f  zipherx_boost_v1.bin
+0f8197d2ba12659a154702055c5776b110c2810a10e32e0c5790ae7ebee08e20  zipherx_boost_manifest.json

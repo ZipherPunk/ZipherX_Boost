@@ -1,131 +1,197 @@
-# ZipherX Boost Files
+# ZipherX Unified Boost File
 
-Public repository containing pre-computed blockchain data for [ZipherX](https://github.com/VictorLux/ZipherX) - a privacy-focused Zclassic (ZCL) wallet.
+A single, comprehensive blockchain data file for instant ZipherX wallet synchronization.
 
-> *"Privacy is necessary for an open society in the electronic age."* - A Cypherpunk's Manifesto
+## Overview
 
-## Current Status
-
-| Metric | Value |
-|--------|-------|
+| Property | Value |
+|----------|-------|
+| **Format** | ZBOOST01 (Unified Binary) |
+| **Version** | 1 |
 | **Chain Height** | 2,934,130 |
-| **CMU Count** | 1,042,471 |
-| **Last Updated** | 2025-12-06 08:42 UTC |
+| **File Size** | ~496 MB (uncompressed) |
+| **Created** | 2025-12-06 |
 
-## Contents
+## What's Inside?
 
-This repository hosts pre-computed cryptographic data that allows ZipherX wallet to sync faster:
+The unified boost file contains **all data** needed for fast wallet synchronization in a single download:
 
-### Commitment Tree Files
-| File | Description | Size | In Git | In Releases |
-|------|-------------|------|--------|-------------|
-| `commitment_tree.bin.zst` | Compressed CMU data for position lookup | ~32 MB | Yes | Yes |
-| `commitment_tree_serialized.bin` | Serialized Sapling tree frontier (instant load) | ~414 bytes | Yes | Yes |
-| `commitment_tree_manifest.json` | Metadata, height, CMU count, SHA256 checksums | ~1 KB | Yes | Yes |
+| Section | Count | Description |
+|---------|-------|-------------|
+| **Shielded Outputs** | 645,482 | Encrypted notes for trial decryption |
+| **Shielded Spends** | 258,606 | Nullifiers for spent note detection |
+| **Block Hashes** | 2,457,162 | For P2P header validation (Sapling onwards) |
+| **Block Timestamps** | 2,934,131 | For transaction date display |
+| **Serialized Tree** | 1 | Merkle commitment tree frontier |
+| **Reliable Peers** | 1 | P2P bootstrap addresses |
 
-### Block Data Files
-| File | Description | Size | In Git | In Releases |
-|------|-------------|------|--------|-------------|
-| `block_hashes.bin` | Block hashes from Sapling activation | ~75 MB | Yes | Yes |
-| `block_timestamps.bin` | Block timestamps from genesis | ~11 MB | Yes | Yes |
-| `block_timestamps_manifest.json` | Timestamps metadata and checksum | ~200 bytes | Yes | Yes |
+## File Format Specification
 
-### Network Files
-| File | Description | Size | In Git | In Releases |
-|------|-------------|------|--------|-------------|
-| `reliable_peers.json` | Reliable P2P peers for bootstrap | ~1 KB | Yes | Yes |
-| `manifest.json` | Master manifest with all file metadata | ~500 bytes | Yes | Yes |
+### Header (128 bytes)
 
-### Other Files
-| File | Description | In Git |
-|------|-------------|--------|
-| `shielded_outputs_manifest.json` | Shielded outputs metadata (for future use) | Yes |
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 8 | Magic | `ZBOOST01` (ASCII) |
+| 8 | 4 | Version | Format version (1) |
+| 12 | 8 | Chain Height | End block height (uint64 LE) |
+| 20 | 8 | Sapling Height | Sapling activation (476,969) |
+| 28 | 32 | Tree Root | Commitment tree root hash |
+| 60 | 32 | Block Hash | Hash at chain height |
+| 92 | 4 | Section Count | Number of sections (6) |
+| 96 | 8 | Created At | Unix timestamp |
+| 104 | 24 | Reserved | Padding for future use |
 
-## What Does the App Download?
+### Section Table (56 bytes per section)
 
-ZipherX downloads the **compressed** `.zst` file from GitHub Releases:
+Immediately follows header. Each entry:
 
-1. **New wallets**: Download `commitment_tree_serialized.bin` (~414 bytes) for instant startup
-2. **Imported wallets**: Download `commitment_tree.bin.zst` (~32 MB), decompress locally, verify checksum
-3. **Timestamps**: Download `block_timestamps.bin` for accurate transaction dates
-4. **Block hashes**: Download `block_hashes.bin` for P2P block validation
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 4 | Type | Section type ID |
+| 4 | 8 | Offset | Byte offset in file |
+| 12 | 8 | Size | Section data size in bytes |
+| 20 | 8 | Count | Number of records |
+| 28 | 8 | Start Height | First block height |
+| 36 | 8 | End Height | Last block height |
+| 44 | 12 | Reserved | Padding |
 
-The app verifies SHA256 checksums from the manifest before using any downloaded data.
+### Section Types
 
-## What is a Commitment Tree?
+| ID | Name | Record Size | Description |
+|----|------|-------------|-------------|
+| 1 | Outputs | 652 bytes | height(4) + tx_idx(2) + out_idx(2) + cmu(32) + epk(32) + ciphertext(580) |
+| 2 | Spends | 36 bytes | height(4) + nullifier(32) |
+| 3 | Hashes | 32 bytes | Block hash in wire format (little-endian) |
+| 4 | Timestamps | 4 bytes | Unix timestamp (uint32 LE) |
+| 5 | Tree | Variable | Serialized commitment tree frontier |
+| 6 | Peers | Variable | JSON array of peer addresses |
 
-The Sapling commitment tree is a Merkle tree containing all shielded transaction output commitments (CMUs) on the Zclassic blockchain. It's required to:
+### Section Data Layout
 
-- Verify ownership of shielded notes
-- Generate spend proofs for transactions
-- Calculate wallet balances
+```
+[Header: 128 bytes]
+[Section Table: 6 × 56 = 336 bytes]
+[Outputs Data: 645,482 × 652 = ~401 MB]
+[Spends Data: 258,606 × 36 = ~9 MB]
+[Hashes Data: 2,457,162 × 32 = ~75 MB]
+[Timestamps Data: 2,934,131 × 4 = ~11 MB]
+[Tree Data: ~414 bytes]
+[Peers Data: ~1 KB]
+```
 
-Building this tree from scratch requires scanning millions of blockchain blocks, which can take hours. These pre-computed files allow instant wallet startup.
+## Byte Order Convention
 
-## Security
+All multi-byte integers are **little-endian** (matching wire format):
 
-### Verification
+- CMUs: Little-endian (wire format, NOT display format)
+- EPKs: Little-endian (wire format)
+- Nullifiers: Little-endian (wire format)
+- Block hashes: Little-endian (wire format, reversed from RPC display)
+- Integers: Little-endian (uint16, uint32, uint64)
 
-All files include SHA-256 checksums in manifests. ZipherX verifies these checksums before using any downloaded data.
+**Important**: RPC/API responses display hashes in big-endian. The file stores them in wire format (bytes reversed).
 
-### Trust Model
+## Height Ranges
 
-- These files contain **publicly derivable data** from the Zclassic blockchain
-- They do **NOT** contain any private keys, seeds, or wallet-specific information
-- The commitment tree root can be independently verified against any Zclassic full node's `finalsaplingroot`
-- If tampered with, transactions would fail cryptographic verification
+| Section | Start Height | End Height | Notes |
+|---------|--------------|------------|-------|
+| Outputs | 476,969 | 2,934,130 | From Sapling activation |
+| Spends | 476,969 | 2,934,130 | From Sapling activation |
+| Hashes | 476,969 | 2,934,130 | From Sapling (no pre-Sapling hashes) |
+| Timestamps | 0 | 2,934,130 | From genesis block |
+| Tree | 2,934,130 | 2,934,130 | At chain tip |
 
-### How to Verify Independently
+## Verification
 
 ```bash
-# Get the expected tree root from a Zclassic node at the checkpoint height
-zclassic-cli getblockheader $(zclassic-cli getblockhash 2934130) | grep finalsaplingroot
+# Verify SHA256 checksum
+shasum -a 256 -c SHA256SUMS.txt
 
-# Compare with the tree_root in commitment_tree_manifest.json
+# Or manually
+shasum -a 256 zipherx_boost_v1.bin
 ```
 
-## Updates
+## Usage
 
-These files are updated automatically using `update_zipherx_boost.py` as the Zclassic blockchain grows. The app checks for updates on first launch and downloads newer versions if available.
+The ZipherX wallet automatically:
 
-### GitHub Releases
+1. Checks for updates on GitHub releases
+2. Downloads the unified file if newer version available
+3. Parses sections on-demand during sync
+4. Uses bundled data for instant wallet initialization
 
-Each update creates tagged releases:
-- `v{height}-tree` - Commitment tree files
-- `v{height}-hashes` - Block hashes
-- `v{height}-timestamps` - Block timestamps
-- `v{height}-peers` - Reliable peers
+### For Imported Wallets
 
-## File Formats
+When importing a private key, the wallet:
 
-### commitment_tree.bin
+1. Downloads the unified boost file (~496 MB)
+2. Uses parallel note decryption (Rayon) for fast scanning
+3. Computes nullifiers to detect spent notes
+4. Builds witnesses for spendable notes
+
+### For New Wallets
+
+New wallets only need the serialized tree section (~414 bytes) since there are no historical notes to find.
+
+## Technical Details
+
+### Cryptographic Values
+
+| Property | Value |
+|----------|-------|
+| Sapling Activation | 476,969 |
+| Tree Root | `66698f156b865a7872853e5b2862bb78cc4c1fa2aa6aab99aa2b89cdb35e6e5e` |
+| Block Hash | `0000034ce99a8a33945932adf0a04d70e5b5ecc6d9dc9ac3f95afeb9447f9e6e` |
+
+### Shielded Output Record (652 bytes)
+
 ```
-[cmu_count: UInt64 LE][cmu1: 32 bytes][cmu2: 32 bytes]...
+struct ShieldedOutput {
+    height: u32,        // 4 bytes - Block height
+    tx_index: u16,      // 2 bytes - Transaction index in block
+    out_index: u16,     // 2 bytes - Output index in transaction
+    cmu: [u8; 32],      // 32 bytes - Note commitment
+    epk: [u8; 32],      // 32 bytes - Ephemeral public key
+    ciphertext: [u8; 580], // 580 bytes - Encrypted note
+}
 ```
-CMUs are in wire format (little-endian).
 
-### block_hashes.bin
+### Shielded Spend Record (36 bytes)
+
 ```
-[count: UInt64 LE][start_height: UInt64 LE][hash1: 32 bytes][hash2: 32 bytes]...
+struct ShieldedSpend {
+    height: u32,        // 4 bytes - Block height
+    nullifier: [u8; 32], // 32 bytes - Nullifier
+}
 ```
-Hashes are in wire format (little-endian), starting from Sapling activation (height 476,969).
 
-### block_timestamps.bin
-```
-[timestamp0: UInt32 LE][timestamp1: UInt32 LE]...
-```
-4 bytes per block, starting from genesis (height 0).
+## Migration from Legacy Files
 
-## License
+This unified format replaces the following legacy files:
 
-MIT License - See [LICENSE](LICENSE)
+| Legacy File | Size | Now In |
+|-------------|------|--------|
+| shielded_outputs.bin | ~430 MB | Section 1 (Outputs) + Section 2 (Spends) |
+| block_hashes.bin | ~75 MB | Section 3 (Hashes) |
+| block_timestamps.bin | ~11 MB | Section 4 (Timestamps) |
+| commitment_tree_serialized.bin | ~414 B | Section 5 (Tree) |
+| reliable_peers.json | ~1 KB | Section 6 (Peers) |
 
-## Disclaimer
+**Benefits of unified format:**
+- Single HTTP request instead of 5+
+- Atomic updates (all-or-nothing)
+- Consistent checksums
+- Simpler caching logic
+- Reduced GitHub API calls
 
-THE SOFTWARE AND DATA ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+## GitHub Release
 
-This repository contains pre-computed blockchain data for convenience. Users are encouraged to verify the data independently using a Zclassic full node. The maintainers make no guarantees about the accuracy, completeness, or timeliness of the data.
+The unified boost file is distributed via GitHub Releases:
+
+- **Repository**: VictorLux/ZipherX_Boost
+- **Release Tag**: v{height}-unified
+- **Files**: zipherx_boost_v1.bin, zipherx_boost_manifest.json, SHA256SUMS.txt
 
 ---
 
-*Part of the ZipherX project - Privacy is a right, not a privilege.*
+*ZipherX - Privacy is a right, not a privilege.*
