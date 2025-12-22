@@ -8,9 +8,9 @@ A single, comprehensive blockchain data file for instant ZipherX wallet synchron
 |----------|-------|
 | **Format** | ZBOOST01 (Unified Binary) |
 | **Version** | 1 |
-| **Chain Height** | 2,935,513 |
-| **File Size** | 747.5 MB (uncompressed) |
-| **Created** | 2025-12-07 |
+| **Chain Height** | 2,951,853 |
+| **File Size** | 748.7 MB (uncompressed) |
+| **Created** | 2025-12-22 |
 
 ## What's Inside?
 
@@ -18,10 +18,10 @@ The unified boost file contains **all data** needed for fast wallet synchronizat
 
 | Section | Count | Description |
 |---------|-------|-------------|
-| **Shielded Outputs** | 1,042,551 | Encrypted notes for trial decryption |
-| **Shielded Spends** | 431,892 | Nullifiers for spent note detection |
-| **Block Hashes** | 2,458,545 | For P2P header validation (Sapling onwards) |
-| **Block Timestamps** | 2,458,545 | For transaction date display |
+| **Shielded Outputs** | 1,043,472 | Encrypted notes for trial decryption |
+| **Shielded Spends** | 432,794 | Nullifiers for spent note detection |
+| **Block Hashes** | 2,474,885 | For P2P header validation (Sapling onwards) |
+| **Block Timestamps** | 2,474,885 | For transaction date display |
 | **Serialized Tree** | 478 bytes | Commitment tree state for instant load |
 | **Reliable Peers** | 9 | P2P bootstrap addresses |
 
@@ -56,15 +56,15 @@ The unified boost file contains **all data** needed for fast wallet synchronizat
 
 ```
 [Header: 128 bytes]
-[Outputs Data: 1,042,551 × 652 = ~648.3 MB]
-[Spends Data: 431,892 × 36 = ~14.8 MB]
-[Hashes Data: 2,458,545 × 32 = ~75.0 MB]
-[Timestamps Data: 2,458,545 × 4 = ~9.4 MB]
+[Outputs Data: 1,043,472 × 652 = ~648.8 MB]
+[Spends Data: 432,794 × 36 = ~14.9 MB]
+[Hashes Data: 2,474,885 × 32 = ~75.5 MB]
+[Timestamps Data: 2,474,885 × 4 = ~9.4 MB]
 [Tree Data: 478 bytes]
 [Peers Data: 195 bytes]
 ```
 
-**Total: ~747.5 MB**
+**Total: ~748.7 MB**
 
 ## Byte Order Convention
 
@@ -82,11 +82,11 @@ All multi-byte integers are **little-endian** (matching wire format):
 
 | Section | Start Height | End Height | Notes |
 |---------|--------------|------------|-------|
-| Outputs | 476,969 | 2,935,513 | From Sapling activation |
-| Spends | 476,969 | 2,935,513 | From Sapling activation |
-| Hashes | 476,969 | 2,935,513 | From Sapling (no pre-Sapling hashes) |
-| Timestamps | 476,969 | 2,935,513 | From Sapling activation |
-| Tree | 476,969 | 2,935,513 | Sapling commitment tree |
+| Outputs | 476,969 | 2,951,853 | From Sapling activation |
+| Spends | 476,969 | 2,951,853 | From Sapling activation |
+| Hashes | 476,969 | 2,951,853 | From Sapling (no pre-Sapling hashes) |
+| Timestamps | 476,969 | 2,951,853 | From Sapling activation |
+| Tree | 476,969 | 2,951,853 | Sapling commitment tree |
 
 ## Verification
 
@@ -96,7 +96,7 @@ shasum -a 256 -c SHA256SUMS.txt
 
 # Or manually
 shasum -a 256 zipherx_boost_v1.bin
-# Expected: 01fa41851bd42c753eef68bc143a7ba7bcd4dd3a5c5555588855eae4861a4019
+# Expected: 657388842c2dcad0bd0eec4bbcdaefb5adbc6ea13b01f178349674b844c486d2
 ```
 
 ## Usage
@@ -128,9 +128,9 @@ New wallets skip historical note scanning since there are no notes to find - onl
 | Property | Value |
 |----------|-------|
 | Sapling Activation | 476,969 |
-| Chain Height | 2,935,513 |
-| Block Hash | `000000651e9055aed19ed75442df15dec1f245045e62231f02b8b5293b0a782b` |
-| Tree Root | `452f5610f5dd1fddf3478a69945d8bc7a2dc51f707db57a31be4ccb1ed015524` |
+| Chain Height | 2,951,853 |
+| Block Hash | `000007d71e6730f1ecae3fc18470191a7a1eaa6da6aa37c6a03964250aad5389` |
+| Tree Root | `42cfa6b380a7e2a3272846bed8f885fb73ecc11327297e7ea607adb4d556a5c9` |
 
 ### Shielded Output Record (652 bytes)
 
@@ -157,9 +157,9 @@ struct ShieldedSpend {
 
 | Metric | Value |
 |--------|-------|
-| Generation Speed | 1,709 blocks/sec |
-| Total Blocks Scanned | 2,458,545 |
-| Generation Time | 24.0 minutes |
+| Generation Speed | 2,102 blocks/sec |
+| Total Blocks Scanned | 2,474,885 |
+| Generation Time | 19.6 minutes |
 | RPC Batch Size | 200 blocks |
 | Worker Threads | 48 |
 
