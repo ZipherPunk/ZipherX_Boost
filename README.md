@@ -8,9 +8,9 @@ A single, comprehensive blockchain data file for instant ZipherX wallet synchron
 |----------|-------|
 | **Format** | ZBOOST01 (Unified Binary) |
 | **Version** | 1 |
-| **Chain Height** | 2,955,907 |
-| **File Size** | 1093.1 MB (uncompressed) |
-| **Created** | 2025-12-25 |
+| **Chain Height** | 2,957,885 |
+| **File Size** | 2174.1 MB (uncompressed) |
+| **Created** | 2025-12-27 |
 
 ## What's Inside?
 
@@ -18,10 +18,10 @@ The unified boost file contains **all data** needed for fast wallet synchronizat
 
 | Section | Count | Description |
 |---------|-------|-------------|
-| **Shielded Outputs** | 1,043,674 | Encrypted notes for trial decryption |
-| **Shielded Spends** | 432,962 | Nullifiers for spent note detection |
-| **Block Hashes** | 2,478,939 | For P2P header validation (Sapling onwards) |
-| **Block Timestamps** | 2,478,939 | For transaction date display |
+| **Shielded Outputs** | 1,043,793 | Encrypted notes for trial decryption |
+| **Shielded Spends** | 433,101 | Nullifiers for spent note detection |
+| **Block Hashes** | 2,480,917 | For P2P header validation (Sapling onwards) |
+| **Block Timestamps** | 2,480,917 | For transaction date display |
 | **Serialized Tree** | 478 bytes | Commitment tree state for instant load |
 | **Reliable Peers** | 9 | P2P bootstrap addresses |
 | **Block Headers** | 2,475,168 | FIX #413: Full headers with finalSaplingRoot for Tree Root Validation |
@@ -58,10 +58,10 @@ The unified boost file contains **all data** needed for fast wallet synchronizat
 
 ```
 [Header: 128 bytes]
-[Outputs Data: 1,043,674 × 652 = ~649.0 MB]
-[Spends Data: 432,962 × 36 = ~14.9 MB]
-[Hashes Data: 2,478,939 × 32 = ~75.7 MB]
-[Timestamps Data: 2,478,939 × 4 = ~9.5 MB]
+[Outputs Data: 1,043,793 × 684 = ~680.9 MB (includes received_in_tx)]
+[Spends Data: 433,101 × 36 = ~14.9 MB]
+[Hashes Data: 2,480,917 × 32 = ~75.7 MB]
+[Timestamps Data: 2,480,917 × 4 = ~9.5 MB]
 [Tree Data: 478 bytes]
 [Peers Data: 195 bytes]
 [Headers Data: 2,475,168 × 140 = ~330.3 MB] (FIX #413)
@@ -85,11 +85,11 @@ All multi-byte integers are **little-endian** (matching wire format):
 
 | Section | Start Height | End Height | Notes |
 |---------|--------------|------------|-------|
-| Outputs | 476,969 | 2,955,907 | From Sapling activation |
-| Spends | 476,969 | 2,955,907 | From Sapling activation |
-| Hashes | 476,969 | 2,955,907 | From Sapling (no pre-Sapling hashes) |
-| Timestamps | 476,969 | 2,955,907 | From Sapling activation |
-| Tree | 476,969 | 2,955,907 | Sapling commitment tree |
+| Outputs | 476,969 | 2,957,885 | From Sapling activation |
+| Spends | 476,969 | 2,957,885 | From Sapling activation |
+| Hashes | 476,969 | 2,957,885 | From Sapling (no pre-Sapling hashes) |
+| Timestamps | 476,969 | 2,957,885 | From Sapling activation |
+| Tree | 476,969 | 2,957,885 | Sapling commitment tree |
 
 ## Verification
 
@@ -99,7 +99,7 @@ shasum -a 256 -c SHA256SUMS.txt
 
 # Or manually
 shasum -a 256 zipherx_boost_v1.bin
-# Expected: 1f72ca053f0acf0fae24205d9ef618ad8e2f0435152b59852a8aa8898428f533
+# Expected: c3b674f38c4c4180eef5e3bb1d96abfde7454a75e10ec65f647e33090f37ca97
 ```
 
 ## Usage
@@ -131,9 +131,9 @@ New wallets skip historical note scanning since there are no notes to find - onl
 | Property | Value |
 |----------|-------|
 | Sapling Activation | 476,969 |
-| Chain Height | 2,955,907 |
-| Block Hash | `00000669b3f66b90dc4d50c0a3f5279c691b491ff06284a6dec9dff6c896f4c2` |
-| Tree Root | `5c39c9f04b24fc1f5b8d22b2e36542853be9a8587365b5e022c0dfc2c08b5fca` |
+| Chain Height | 2,957,885 |
+| Block Hash | `00000506d568751a6b747ec1d3ab036d9db556c46a7cb31420a34aa25e6e1581` |
+| Tree Root | `68a6f50b529f1110177e7ee25c3af7496d075961083e2415b188f6a7f5189f5f` |
 
 ### Shielded Output Record (652 bytes)
 
@@ -160,8 +160,8 @@ struct ShieldedSpend {
 
 | Metric | Value |
 |--------|-------|
-| Generation Speed | 2,185 blocks/sec |
-| Total Blocks Scanned | 2,478,939 |
+| Generation Speed | 2,183 blocks/sec |
+| Total Blocks Scanned | 2,480,917 |
 | Generation Time | 18.9 minutes |
 | RPC Batch Size | 200 blocks |
 | Worker Threads | 48 |
