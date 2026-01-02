@@ -1,81 +1,81 @@
 {
   "format": "zipherx_boost_v1",
   "version": 2,
-  "created_at": "2026-01-01T00:00:42.937691+00:00",
-  "chain_height": 2962638,
+  "created_at": "2026-01-02T09:06:26.268265+00:00",
+  "chain_height": 2964128,
   "sapling_activation": 476969,
-  "output_count": 1044064,
-  "spend_count": 433369,
-  "block_hash": "0000016d8da0202a09274663848ed54e7dcbbd604f2fa726b96dab0fd5f76ded",
-  "tree_root": "184c5d45dcb419c4c295a7f28072f791c41b80a0c4e8191169778d5220b198aa",
+  "output_count": 1044150,
+  "spend_count": 433458,
+  "block_hash": "0000069e45cf2d43d0fdd15b24e1193b3e565bc8b2fcdc7e1d785cbdd0b41a56",
+  "tree_root": "0187103f5387f58fc2fa6a2bffbe7c63ad01552ee5671ac41100d97f054a4fc2",
   "files": {
     "uncompressed": {
       "name": "zipherx_boost_v1.bin",
-      "size": 2282608462,
-      "sha256": "0f346aa8be43bd23a9c764bdc55b455551682e9b3127019c32f0d9b214c738c4"
+      "size": 2283534525,
+      "sha256": "acae62c37d09f39719ae9a5f19a4c2c75f6017a342f883744062b9d87af65e88"
     },
     "compressed": {
       "name": "zipherx_boost_v1.bin.zst",
-      "size": 2125868608,
-      "sha256": "be89b862f1af4f4ba4950a2d6c751eec9f66528b7dd77c3e7a131c4f4418318f"
+      "size": 2126847023,
+      "sha256": "068b581321bdde674bc90698b0f3bc5cc2348599e4e20b5871d86d71a0e76a18"
     }
   },
   "sections": [
     {
       "type": 1,
       "offset": 128,
-      "size": 714139776,
-      "count": 1044064,
+      "size": 714198600,
+      "count": 1044150,
       "start_height": 476969,
-      "end_height": 2962638
+      "end_height": 2964128
     },
     {
       "type": 2,
-      "offset": 714139904,
-      "size": 29469092,
-      "count": 433369,
+      "offset": 714198728,
+      "size": 29475144,
+      "count": 433458,
       "start_height": 476969,
-      "end_height": 2962638
+      "end_height": 2964128
     },
     {
       "type": 3,
-      "offset": 743608996,
-      "size": 79541440,
-      "count": 2485670,
+      "offset": 743673872,
+      "size": 79589120,
+      "count": 2487160,
       "start_height": 476969,
-      "end_height": 2962638
+      "end_height": 2964128
     },
     {
       "type": 4,
-      "offset": 823150436,
-      "size": 9942680,
-      "count": 2485670,
+      "offset": 823262992,
+      "size": 9948640,
+      "count": 2487160,
       "start_height": 476969,
-      "end_height": 2962638
+      "end_height": 2964128
     },
     {
       "type": 5,
-      "offset": 833093116,
-      "size": 574,
+      "offset": 833211632,
+      "size": 542,
       "count": 1,
       "start_height": 476969,
-      "end_height": 2962638
+      "end_height": 2964128
     },
     {
       "type": 6,
-      "offset": 833093690,
-      "size": 176,
+      "offset": 833212174,
+      "size": 175,
       "count": 8,
       "start_height": 0,
       "end_height": 0
     },
     {
       "type": 7,
-      "offset": 833093866,
-      "size": 1449514596,
-      "count": 2485670,
+      "offset": 833212349,
+      "size": 1450322176,
+      "count": 2487160,
       "start_height": 476969,
-      "end_height": 2962638
+      "end_height": 2964128
     }
   ]
 }
