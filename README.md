@@ -8,9 +8,9 @@ A single, comprehensive blockchain data file for instant ZipherX wallet synchron
 |----------|-------|
 | **Format** | ZBOOST01 (Unified Binary) |
 | **Version** | 1 |
-| **Chain Height** | 2,984,746 |
-| **File Size** | 2025.5 MB (zstd), 2174.5 MB uncompressed (7% reduction) |
-| **Created** | 2026-01-21 |
+| **Chain Height** | 2,988,797 |
+| **File Size** | 1999 MB (zstd), 2192 MB uncompressed (7% reduction) |
+| **Created** | 2026-01-25 |
 
 ## What's Inside?
 
@@ -18,13 +18,13 @@ The unified boost file contains **all data** needed for fast wallet synchronizat
 
 | Section | Count | Description |
 |---------|-------|-------------|
-| **Shielded Outputs** | 1,045,438 | Encrypted notes for trial decryption |
-| **Shielded Spends** | 434,749 | Nullifiers for spent note detection |
-| **Block Hashes** | 2,507,778 | For P2P header validation (Sapling onwards) |
-| **Block Timestamps** | 2,507,778 | For transaction date display |
-| **Serialized Tree** | 478 bytes | Commitment tree state for instant load |
-| **Reliable Peers** | 9 | P2P bootstrap addresses |
-| **Block Headers** | 2,475,168 | FIX #413: Full headers with finalSaplingRoot for Tree Root Validation |
+| **Shielded Outputs** | 1,045,687 | Encrypted notes for trial decryption |
+| **Shielded Spends** | 434,983 | Nullifiers for spent note detection |
+| **Block Hashes** | 2,511,829 | For P2P header validation (Sapling onwards) |
+| **Block Timestamps** | 2,511,829 | For transaction date display |
+| **Serialized Tree** | 510 bytes | Commitment tree state for instant load |
+| **Reliable Peers** | 4 | P2P bootstrap addresses |
+| **Block Headers** | 2,511,829 | FIX #413: Full headers with finalSaplingRoot for Tree Root Validation |
 
 ## File Format Specification
 
@@ -85,11 +85,11 @@ All multi-byte integers are **little-endian** (matching wire format):
 
 | Section | Start Height | End Height | Notes |
 |---------|--------------|------------|-------|
-| Outputs | 476,969 | 2,984,746 | From Sapling activation |
-| Spends | 476,969 | 2,984,746 | From Sapling activation |
-| Hashes | 476,969 | 2,984,746 | From Sapling (no pre-Sapling hashes) |
-| Timestamps | 476,969 | 2,984,746 | From Sapling activation |
-| Tree | 476,969 | 2,984,746 | Sapling commitment tree |
+| Outputs | 476,969 | 2,988,797 | From Sapling activation |
+| Spends | 476,969 | 2,988,797 | From Sapling activation |
+| Hashes | 476,969 | 2,988,797 | From Sapling (no pre-Sapling hashes) |
+| Timestamps | 476,969 | 2,988,797 | From Sapling activation |
+| Tree | 476,969 | 2,988,797 | Sapling commitment tree |
 
 ## Verification
 
@@ -99,7 +99,11 @@ shasum -a 256 -c SHA256SUMS.txt
 
 # Or manually
 shasum -a 256 zipherx_boost_v1.bin
-# Expected: f7f8f9b90df333ab5a8ac134757abab422d331b43cef2c8555761b75d6983af8
+# Expected: edb4587c80a2c963aca8a690fff823ca47fbe8208daa9f614c135986d4a3db8a
+
+# For compressed file:
+shasum -a 256 zipherx_boost_v1.bin.zst
+# Expected: beb76ec837c9d29c5260e78fb894ee012834e1fb28b370997f7ab48bc8a788ec
 ```
 
 ## Usage
@@ -131,9 +135,9 @@ New wallets skip historical note scanning since there are no notes to find - onl
 | Property | Value |
 |----------|-------|
 | Sapling Activation | 476,969 |
-| Chain Height | 2,984,746 |
-| Block Hash | `00000b7e6aee23fbf4353bbb652caad2ecb64c1aa502ca099a267fdab9e7fed9` |
-| Tree Root | `0841f394debedc6a612e596909841273857af59d5067d6e4d854d0a86134ae4c` |
+| Chain Height | 2,988,797 |
+| Block Hash | `0000003b3ee79346b4f6cc029128665b743057e3ea874b27fc22a1d0e0d2e367` |
+| Tree Root | `0c6add79bab5ddb20a5cb0d7ad6a2c62d01bd3d6bb51f7dee21aedbce601de7f` |
 
 ### Shielded Output Record (652 bytes)
 
@@ -160,18 +164,18 @@ struct ShieldedSpend {
 
 | Metric | Value |
 |--------|-------|
-| Generation Speed | 2,058 blocks/sec |
-| Total Blocks Scanned | 2,507,778 |
-| Generation Time | 20.3 minutes |
+| Generation Speed | 2,246 blocks/sec |
+| Total Blocks Scanned | 2,511,829 |
+| Generation Time | 23.2 minutes |
 | RPC Batch Size | 200 blocks |
-| Worker Threads | 48 |
+| Worker Threads | 16 |
 
 ## GitHub Release
 
 The unified boost file is distributed via GitHub Releases:
 
 - **Repository**: VictorLux/ZipherX_Boost
-- **Release Tag**: v2935268-unified
+- **Release Tag**: v2988797-unified
 - **Files**: zipherx_boost_v1.bin, zipherx_boost_manifest.json, SHA256SUMS.txt
 
 ---
