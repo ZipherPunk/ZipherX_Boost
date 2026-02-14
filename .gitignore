@@ -42,6 +42,8 @@ shielded_outputs_manifest.json
 
 # ===========================================
 # UNIFIED BOOST FILE
-# Distributed via GitHub Releases only (496 MB)
+# Distributed via GitHub Releases only
 # ===========================================
 zipherx_boost_v1.bin
+zipherx_boost_v1.bin.zst
+zipherx_boost_v1.bin.zst.part*
