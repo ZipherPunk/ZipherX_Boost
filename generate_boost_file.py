@@ -91,6 +91,9 @@ BATCH_SIZE = 200  # Reduced from 800 to prevent RPC timeouts
 MAGIC = b'ZBOOST01'
 HEADER_SIZE = 128
 
+# GitHub release asset size limit (2 GiB)
+GITHUB_MAX_ASSET_SIZE = 2147483648
+
 # Setup logging
 LOG_FILE = "/Users/chris/ZipherX/Tools/boost_generator.log"
 logging.basicConfig(
@@ -943,7 +946,7 @@ def write_boost_files_three_part(output_dir, outputs, spends, hashes, timestamps
     }
 
 def write_manifest(manifest_path, outputs, spends, hashes, timestamps, chain_height, sections, file_size, tree_root="",
-                   compressed_path=None, compressed_size=None):
+                   compressed_path=None, compressed_size=None, split_parts=None):
     """Write the manifest JSON file"""
     # FIX #599: Hashes are now stored in RPC format (big-endian), no need to reverse
     last_hash = hashes[-1][1].hex() if hashes else "0" * 64
@@ -975,6 +978,20 @@ def write_manifest(manifest_path, outputs, spends, hashes, timestamps, chain_hei
             "size": compressed_size,
             "sha256": ""
         }
+
+    # Add split parts info if the compressed file was split
+    if split_parts:
+        parts_info = []
+        for part_path in split_parts:
+            part_sha = compute_file_sha256(part_path)
+            parts_info.append({
+                "name": os.path.basename(part_path),
+                "size": os.path.getsize(part_path),
+                "sha256": part_sha
+            })
+            log(f"SHA256 (split part):   {os.path.basename(part_path)}: {part_sha}")
+        manifest["files"]["split_parts"] = parts_info
+        manifest["files"]["split_count"] = len(split_parts)
 
     log("Computing SHA256 checksum(s)...")
     boost_path = os.path.join(os.path.dirname(manifest_path), "zipherx_boost_v1.bin")
@@ -1129,9 +1146,46 @@ def compute_file_sha256(file_path: str) -> str:
     return sha256_hash.hexdigest()
 
 
+def split_compressed_file(compressed_path: str):
+    """Split a compressed file into parts that fit under GitHub's 2 GiB asset limit.
+    Returns list of part file paths, or None if no split is needed.
+    """
+    file_size = os.path.getsize(compressed_path)
+    if file_size <= GITHUB_MAX_ASSET_SIZE:
+        return None  # No split needed
+
+    # Calculate number of parts needed (each must be < 2 GiB)
+    import math
+    num_parts = math.ceil(file_size / GITHUB_MAX_ASSET_SIZE)
+    part_size = math.ceil(file_size / num_parts)
+
+    log(f"Compressed file ({file_size / (1024*1024):.1f} MB) exceeds GitHub 2 GiB limit")
+    log(f"  Splitting into {num_parts} parts of ~{part_size / (1024*1024):.1f} MB each...")
+
+    base_path = compressed_path  # e.g. /path/to/zipherx_boost_v1.bin.zst
+    part_paths = []
+
+    with open(compressed_path, "rb") as f:
+        for i in range(num_parts):
+            part_path = f"{base_path}.part{i + 1}"
+            bytes_written = 0
+            with open(part_path, "wb") as pf:
+                while bytes_written < part_size:
+                    chunk = f.read(min(65536, part_size - bytes_written))
+                    if not chunk:
+                        break
+                    pf.write(chunk)
+                    bytes_written += len(chunk)
+            actual_size = os.path.getsize(part_path)
+            log(f"  Part {i + 1}: {os.path.basename(part_path)} ({actual_size / (1024*1024):.1f} MB)")
+            part_paths.append(part_path)
+
+    return part_paths
+
+
 def update_sha256sums(source_dir: str, repo_dir: str):
     """Generate SHA256SUMS.txt file.
-    PRODUCTION: Includes compressed file for GitHub release.
+    PRODUCTION: Includes compressed file (or split parts) for GitHub release.
     FIX: Calculate SHA256 from source_dir (new files) not repo_dir (old files).
     """
     log("Generating SHA256SUMS.txt...")
@@ -1140,12 +1194,28 @@ def update_sha256sums(source_dir: str, repo_dir: str):
 
     lines = []
 
-    # Check for compressed file in source directory first (for GitHub release)
-    compressed_file = os.path.join(source_dir, "zipherx_boost_v1.bin.zst")
-    if os.path.exists(compressed_file):
-        sha = compute_file_sha256(compressed_file)
-        lines.append(f"{sha}  zipherx_boost_v1.bin.zst")
-        log(f"  zipherx_boost_v1.bin.zst: {sha}")
+    # Check for split parts first (takes priority over single compressed file)
+    import glob as glob_module
+    split_parts = sorted(glob_module.glob(os.path.join(source_dir, "zipherx_boost_v1.bin.zst.part*")))
+    if split_parts:
+        for part_path in split_parts:
+            part_name = os.path.basename(part_path)
+            sha = compute_file_sha256(part_path)
+            lines.append(f"{sha}  {part_name}")
+            log(f"  {part_name}: {sha}")
+        # Also include checksum of the full compressed file (for verification after reassembly)
+        compressed_file = os.path.join(source_dir, "zipherx_boost_v1.bin.zst")
+        if os.path.exists(compressed_file):
+            sha = compute_file_sha256(compressed_file)
+            lines.append(f"{sha}  zipherx_boost_v1.bin.zst")
+            log(f"  zipherx_boost_v1.bin.zst: {sha} (full file, for verification after reassembly)")
+    else:
+        # Single compressed file
+        compressed_file = os.path.join(source_dir, "zipherx_boost_v1.bin.zst")
+        if os.path.exists(compressed_file):
+            sha = compute_file_sha256(compressed_file)
+            lines.append(f"{sha}  zipherx_boost_v1.bin.zst")
+            log(f"  zipherx_boost_v1.bin.zst: {sha}")
 
     # Check for uncompressed file in source directory (where it was generated)
     boost_file = os.path.join(source_dir, "zipherx_boost_v1.bin")
@@ -1257,7 +1327,7 @@ def update_readme(repo_dir: str, chain_height: int, output_count: int, spend_cou
 
 def copy_files_to_repo(source_dir: str, repo_dir: str):
     """Copy boost files to the Git repository.
-    PRODUCTION: Copies compressed .zst file for GitHub release (2GB limit workaround).
+    PRODUCTION: Copies split parts or compressed .zst file for GitHub release.
     """
     log(f"Copying files to {repo_dir}...")
 
@@ -1266,11 +1336,19 @@ def copy_files_to_repo(source_dir: str, repo_dir: str):
     # Copy manifest (always)
     files = ["zipherx_boost_manifest.json"]
 
-    # Copy compressed file if exists (for GitHub release - under 2GB)
-    compressed_src = os.path.join(source_dir, "zipherx_boost_v1.bin.zst")
-    if os.path.exists(compressed_src):
-        files.append("zipherx_boost_v1.bin.zst")
-        log("  Using compressed file for GitHub release (2GB limit workaround)")
+    # Check for split parts first (takes priority)
+    import glob as glob_module
+    split_parts = sorted(glob_module.glob(os.path.join(source_dir, "zipherx_boost_v1.bin.zst.part*")))
+    if split_parts:
+        for part_path in split_parts:
+            files.append(os.path.basename(part_path))
+        log(f"  Using {len(split_parts)} split parts for GitHub release (2 GiB limit)")
+    else:
+        # Copy single compressed file if exists
+        compressed_src = os.path.join(source_dir, "zipherx_boost_v1.bin.zst")
+        if os.path.exists(compressed_src):
+            files.append("zipherx_boost_v1.bin.zst")
+            log("  Using compressed file for GitHub release")
 
     for filename in files:
         src = os.path.join(source_dir, filename)
@@ -1356,7 +1434,7 @@ def git_commit_and_push(repo_dir: str, chain_height: int):
 def create_github_release(repo_dir: str, chain_height: int, file_size: int, output_count: int,
                           spend_count: int, tree_root: str):
     """Create a GitHub release with the boost files.
-    PRODUCTION: Uses compressed .zst file (2GB limit workaround).
+    PRODUCTION: Uses split parts or compressed .zst file for GitHub release.
     """
     log("=== CREATING GITHUB RELEASE ===")
 
@@ -1366,12 +1444,74 @@ def create_github_release(repo_dir: str, chain_height: int, file_size: int, outp
     block_count = chain_height - SAPLING_ACTIVATION + 1
     file_size_mb = file_size / (1024 * 1024)
 
-    # Check if compressed file exists (for GitHub release - under 2GB)
-    compressed_file = os.path.join(repo_dir, "zipherx_boost_v1.bin.zst")
-    if os.path.exists(compressed_file):
-        compressed_size = os.path.getsize(compressed_file)
-        compressed_mb = compressed_size / (1024 * 1024)
+    # Check for split parts first (takes priority over single compressed file)
+    import glob as glob_module
+    split_part_files = sorted(glob_module.glob(os.path.join(repo_dir, "zipherx_boost_v1.bin.zst.part*")))
+
+    if split_part_files:
+        # Split parts mode
+        num_parts = len(split_part_files)
+        total_compressed = sum(os.path.getsize(p) for p in split_part_files)
+        compressed_mb = total_compressed / (1024 * 1024)
+
+        # Build download commands for release notes
+        download_cmds = ""
+        for part_path in split_part_files:
+            part_name = os.path.basename(part_path)
+            download_cmds += f"wget https://github.com/VictorLux/ZipherX_Boost/releases/download/{tag}/{part_name}\n"
+
+        # Build reassembly command
+        part_names = " ".join(os.path.basename(p) for p in split_part_files)
+
         notes = f"""## ZipherX Unified Boost File (PRODUCTION v2)
+
+**Chain Height:** {chain_height:,}
+**Download Size:** {compressed_mb:.1f} MB (zstd compressed, {num_parts} parts)
+**Uncompressed Size:** {file_size_mb:.1f} MB
+
+### Contents
+| Section | Count |
+|---------|-------|
+| Shielded Outputs | {output_count:,} |
+| Shielded Spends | {spend_count:,} |
+| Block Hashes | {block_count:,} |
+| Block Timestamps | {block_count:,} |
+| Block Headers | {block_count:,} (with Equihash solutions) |
+| Serialized Tree | 1 |
+| Reliable Peers | 9 |
+
+### PRODUCTION v2 Features
+- **received_in_tx** included for all outputs (no placeholders!)
+- **Equihash solutions** included for all headers (full PoW verification)
+- 100% accurate transaction history
+- Instant import with real txids for change detection
+
+### Tree Root
+`{tree_root}`
+
+### How to Use
+```bash
+# Download all parts
+{download_cmds}
+# Reassemble and decompress
+cat {part_names} > zipherx_boost_v1.bin.zst
+zstd -d zipherx_boost_v1.bin.zst
+
+# Verify checksum
+shasum -a 256 -c SHA256SUMS.txt
+```
+
+---
+*Generated with ZipherX Boost Generator v2*
+*Privacy is a right, not a privilege.*
+"""
+    else:
+        # Single compressed file or uncompressed fallback
+        compressed_file = os.path.join(repo_dir, "zipherx_boost_v1.bin.zst")
+        if os.path.exists(compressed_file):
+            compressed_size = os.path.getsize(compressed_file)
+            compressed_mb = compressed_size / (1024 * 1024)
+            notes = f"""## ZipherX Unified Boost File (PRODUCTION v2)
 
 **Chain Height:** {chain_height:,}
 **Download Size:** {compressed_mb:.1f} MB (zstd compressed)
@@ -1389,10 +1529,10 @@ def create_github_release(repo_dir: str, chain_height: int, file_size: int, outp
 | Reliable Peers | 9 |
 
 ### PRODUCTION v2 Features
-- ✅ **received_in_tx** included for all outputs (no placeholders!)
-- ✅ **Equihash solutions** included for all headers (full PoW verification)
-- ✅ 100% accurate transaction history
-- ✅ Instant import with real txids for change detection
+- **received_in_tx** included for all outputs (no placeholders!)
+- **Equihash solutions** included for all headers (full PoW verification)
+- 100% accurate transaction history
+- Instant import with real txids for change detection
 
 ### Tree Root
 `{tree_root}`
@@ -1411,9 +1551,8 @@ shasum -a 256 -c SHA256SUMS.txt
 *Generated with ZipherX Boost Generator v2*
 *Privacy is a right, not a privilege.*
 """
-    else:
-        # Fallback to uncompressed file info
-        notes = f"""## ZipherX Unified Boost File
+        else:
+            notes = f"""## ZipherX Unified Boost File
 
 **Chain Height:** {chain_height:,}
 **File Size:** {file_size_mb:.1f} MB
@@ -1440,7 +1579,6 @@ shasum -a 256 -c SHA256SUMS.txt
 *Generated with ZipherX Boost Generator*
 *Privacy is a right, not a privilege.*
 """
-        compressed_file = None
 
     manifest_file = os.path.join(repo_dir, "zipherx_boost_manifest.json")
     sha_file = os.path.join(repo_dir, "SHA256SUMS.txt")
@@ -1475,7 +1613,7 @@ shasum -a 256 -c SHA256SUMS.txt
             text=True
         )
 
-    # Create release with compressed file (if available)
+    # Create release
     log(f"Creating release {tag}...")
     cmd = [
         "gh", "release", "create", tag,
@@ -1485,15 +1623,22 @@ shasum -a 256 -c SHA256SUMS.txt
         "--notes", notes
     ]
 
-    # Add compressed file if exists, otherwise uncompressed
-    if compressed_file:
-        cmd.append(compressed_file)
-        log(f"  Uploading compressed file ({compressed_mb:.1f} MB)")
+    # Add boost file assets
+    if split_part_files:
+        for part_path in split_part_files:
+            cmd.append(part_path)
+            part_mb = os.path.getsize(part_path) / (1024 * 1024)
+            log(f"  Uploading {os.path.basename(part_path)} ({part_mb:.1f} MB)")
     else:
-        boost_file = os.path.join(repo_dir, "zipherx_boost_v1.bin")
-        if os.path.exists(boost_file):
-            cmd.append(boost_file)
-            log(f"  Uploading uncompressed file ({file_size_mb:.1f} MB)")
+        compressed_file = os.path.join(repo_dir, "zipherx_boost_v1.bin.zst")
+        if os.path.exists(compressed_file):
+            cmd.append(compressed_file)
+            log(f"  Uploading compressed file ({os.path.getsize(compressed_file) / (1024*1024):.1f} MB)")
+        else:
+            boost_file = os.path.join(repo_dir, "zipherx_boost_v1.bin")
+            if os.path.exists(boost_file):
+                cmd.append(boost_file)
+                log(f"  Uploading uncompressed file ({file_size_mb:.1f} MB)")
 
     result = subprocess.run(
         cmd,
@@ -1511,7 +1656,7 @@ shasum -a 256 -c SHA256SUMS.txt
     if not release_url.startswith("http"):
         release_url = f"https://github.com/VictorLux/ZipherX_Boost/releases/tag/{tag}"
 
-    log(f"✅ Release created: {release_url}")
+    log(f"Release created: {release_url}")
     return True, release_url
 
 
@@ -1787,6 +1932,7 @@ def main():
         text=True
     )
 
+    split_parts = None
     if result.returncode != 0:
         log_error(f"Compression failed: {result.stderr}")
         log("  Continuing with uncompressed file...")
@@ -1800,8 +1946,13 @@ def main():
         log(f"  Time:   {compress_time:.1f} seconds")
         log(f"  Speed:  {(file_size / (1024*1024)) / compress_time:.1f} MB/sec")
 
+        # Split if compressed file exceeds GitHub's 2 GiB asset limit
+        if compressed_size > GITHUB_MAX_ASSET_SIZE:
+            split_parts = split_compressed_file(compressed_path)
+
     write_manifest(manifest_path, outputs, spends, hashes, timestamps, chain_height, sections, file_size, tree_root,
-                   compressed_path if compressed_path != boost_path else None, compressed_size)
+                   compressed_path if compressed_path != boost_path else None, compressed_size,
+                   split_parts=split_parts)
 
     total_time = time.time() - start_time
     blocks_per_sec = total_blocks / total_time if total_time > 0 else 0

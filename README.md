@@ -175,8 +175,8 @@ struct ShieldedSpend {
 The unified boost file is distributed via GitHub Releases:
 
 - **Repository**: VictorLux/ZipherX_Boost
-- **Release Tag**: v2988797-unified
-- **Files**: zipherx_boost_v1.bin, zipherx_boost_manifest.json, SHA256SUMS.txt
+- **Release Tag**: v3011251-unified
+- **Files**: zipherx_boost_v1.bin.zst.part1, zipherx_boost_v1.bin.zst.part2, zipherx_boost_manifest.json, SHA256SUMS.txt
 
 ---
 
