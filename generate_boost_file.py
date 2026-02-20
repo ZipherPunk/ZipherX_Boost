@@ -50,7 +50,7 @@ Requirements:
 - Running zclassicd node with RPC enabled
 - Rust toolchain (for serialize_tree and check_balance)
 - gh CLI authenticated for GitHub releases
-- Git repository at /Users/chris/ZipherX_Boost
+- Git repository at ~/ZipherX_Boost
 
 Node Configuration (for max speed, add to zclassic.conf):
     rpcthreads=32
@@ -60,6 +60,7 @@ Node Configuration (for max speed, add to zclassic.conf):
 
 import os
 import sys
+from pathlib import Path
 import json
 import struct
 import time
@@ -95,7 +96,7 @@ HEADER_SIZE = 128
 GITHUB_MAX_ASSET_SIZE = 2147483648
 
 # Setup logging
-LOG_FILE = "/Users/chris/ZipherX/Tools/boost_generator.log"
+LOG_FILE = os.path.join(str(Path.home()), "ZipherX/Tools/boost_generator.log")
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(message)s',
@@ -1061,14 +1062,14 @@ def verify_completeness(outputs, spends, hashes, timestamps, chain_height, heade
 # AUTOMATION FUNCTIONS - Balance Verification, README, Git, Release
 ###############################################################################
 
-def verify_balance(key_file_path: str = "/Users/chris/ZipherX/Tools/check_balance/key.txt"):
+def verify_balance(key_file_path: str = os.path.join(str(Path.home()), "ZipherX/Tools/check_balance/key.txt")):
     """
     Verify wallet balance using the Rust check_balance tool.
     Returns (success, balance_zcl, node_balance_zcl) or (False, None, None) on error.
     """
     log("=== BALANCE VERIFICATION ===")
 
-    check_balance_dir = "/Users/chris/ZipherX/Tools/check_balance"
+    check_balance_dir = os.path.join(str(Path.home()), "ZipherX/Tools/check_balance")
 
     if not os.path.exists(key_file_path):
         log_error(f"Key file not found: {key_file_path}")
@@ -1458,7 +1459,7 @@ def create_github_release(repo_dir: str, chain_height: int, file_size: int, outp
         download_cmds = ""
         for part_path in split_part_files:
             part_name = os.path.basename(part_path)
-            download_cmds += f"wget https://github.com/VictorLux/ZipherX_Boost/releases/download/{tag}/{part_name}\n"
+            download_cmds += f"wget https://github.com/ZipherPunk/ZipherX_Boost/releases/download/{tag}/{part_name}\n"
 
         # Build reassembly command
         part_names = " ".join(os.path.basename(p) for p in split_part_files)
@@ -1540,7 +1541,7 @@ shasum -a 256 -c SHA256SUMS.txt
 ### How to Use
 ```bash
 # Download and decompress
-wget https://github.com/VictorLux/ZipherX_Boost/releases/download/{tag}/zipherx_boost_v1.bin.zst
+wget https://github.com/ZipherPunk/ZipherX_Boost/releases/download/{tag}/zipherx_boost_v1.bin.zst
 zstd -d zipherx_boost_v1.bin.zst
 
 # Verify checksum
@@ -1654,7 +1655,7 @@ shasum -a 256 -c SHA256SUMS.txt
     # Extract release URL from output
     release_url = result.stdout.strip()
     if not release_url.startswith("http"):
-        release_url = f"https://github.com/VictorLux/ZipherX_Boost/releases/tag/{tag}"
+        release_url = f"https://github.com/ZipherPunk/ZipherX_Boost/releases/tag/{tag}"
 
     log(f"Release created: {release_url}")
     return True, release_url
@@ -1688,13 +1689,13 @@ def generate_serialized_tree(outputs):
         log(f"  Wrote {len(outputs)} CMUs to temp file ({os.path.getsize(cmu_file.name)} bytes)")
 
         # Use the serialize_tree Rust tool
-        serialize_tool = "/Users/chris/ZipherX/Libraries/zipherx-ffi/target/release/serialize_tree"
+        serialize_tool = os.path.join(str(Path.home()), "ZipherX/Libraries/zipherx-ffi/target/release/serialize_tree")
 
         if not os.path.exists(serialize_tool):
             log("  Building serialize_tree tool...")
             result = subprocess.run(
                 ["cargo", "build", "--release", "--bin", "serialize_tree"],
-                cwd="/Users/chris/ZipherX/Libraries/zipherx-ffi",
+                cwd=os.path.join(str(Path.home()), "ZipherX/Libraries/zipherx-ffi"),
                 capture_output=True,
                 text=True
             )
@@ -1717,7 +1718,7 @@ def generate_serialized_tree(outputs):
         if result.returncode != 0:
             log_error(f"  serialize_tree failed: {result.stderr}")
             # Try fallback: use the existing commitment_tree.bin if available
-            fallback_path = "/Users/chris/ZipherX/Resources/commitment_tree.bin"
+            fallback_path = os.path.join(str(Path.home()), "ZipherX/Resources/commitment_tree.bin")
             if os.path.exists(fallback_path):
                 log(f"  Using fallback tree from {fallback_path}")
                 # We need to build tree from this file and serialize
@@ -1805,15 +1806,15 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description='ZipherX Boost File Generator')
-    parser.add_argument('output_dir', nargs='?', default='/Users/chris/Documents/BoostCache',
+    parser.add_argument('output_dir', nargs='?', default=os.path.join(str(Path.home()), 'Documents/BoostCache'),
                         help='Output directory for boost files')
     parser.add_argument('--skip-verify', action='store_true',
                         help='Skip balance verification step')
     parser.add_argument('--skip-git', action='store_true',
                         help='Skip Git commit/push and GitHub release')
-    parser.add_argument('--key-file', default='/Users/chris/ZipherX/Tools/check_balance/key.txt',
+    parser.add_argument('--key-file', default=os.path.join(str(Path.home()), 'ZipherX/Tools/check_balance/key.txt'),
                         help='Path to key file for balance verification')
-    parser.add_argument('--repo-dir', default='/Users/chris/ZipherX_Boost',
+    parser.add_argument('--repo-dir', default=os.path.join(str(Path.home()), 'ZipherX_Boost'),
                         help='Path to Git repository for release')
     parser.add_argument('--three-file', action='store_true',
                         help='Use three-file format (core + equihash separately - smaller download)')
