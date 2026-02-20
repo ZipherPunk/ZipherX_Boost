@@ -18,7 +18,20 @@
       "name": "zipherx_boost_v1.bin.zst",
       "size": 2158220657,
       "sha256": "4ae8cc7222edd41033176de55b834e344e7fcdac57df37fbd57e0de8dc25d535"
-    }
+    },
+    "split_parts": [
+      {
+        "name": "zipherx_boost_v1.bin.zst.part1",
+        "size": 1079109469,
+        "sha256": "2d69610bf6df2a6bcb95ed86d3a32c20882fc20231cdf0629d4bbfb8dac5516c"
+      },
+      {
+        "name": "zipherx_boost_v1.bin.zst.part2",
+        "size": 1079109469,
+        "sha256": "664d6104121dde215a493be8336bce626485ffe3cd540893eec2a9436f51398f"
+      }
+    ],
+    "split_count": 2
   },
   "sections": [
     {
