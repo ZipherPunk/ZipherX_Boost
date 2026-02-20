@@ -2,6 +2,16 @@
 
 A single, comprehensive blockchain data file for instant ZipherX wallet synchronization.
 
+> **DISCLAIMER**: This software and data are provided **"AS IS"**, without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and noninfringement. **ZipherX is beta software under active development.** By downloading or using the boost file, you acknowledge and agree that:
+>
+> - **USE AT YOUR OWN RISK.** The authors and contributors are not liable for any loss of funds, data corruption, or damages arising from the use of this software or data.
+> - **ALWAYS VERIFY CHECKSUMS** before using any downloaded file. Do not trust files that fail checksum verification.
+> - **ALWAYS BACKUP YOUR WALLET** before applying any sync data. Loss of wallet data may result in permanent loss of funds.
+> - **NO FINANCIAL ADVICE.** Nothing in this repository constitutes financial, investment, or legal advice. Cryptocurrency involves significant risk.
+> - **BETA SOFTWARE.** This project is in active beta. Bugs, breaking changes, and data format changes may occur without notice.
+> - **NOT AUDITED.** The cryptographic data in the boost file has not been independently audited. Use trusted sources only.
+> - The boost file contains **publicly available blockchain data only** — no private keys, seeds, or sensitive information are included.
+
 ## Overview
 
 | Property | Value |
