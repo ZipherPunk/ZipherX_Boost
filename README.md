@@ -18,9 +18,9 @@ A single, comprehensive blockchain data file for instant ZipherX wallet synchron
 |----------|-------|
 | **Format** | ZBOOST01 (Unified Binary) |
 | **Version** | 1 |
-| **Chain Height** | 3,011,251 |
+| **Chain Height** | 3,018,024 |
 | **File Size** | 1999 MB (zstd), 2192 MB uncompressed (7% reduction) |
-| **Created** | 2026-02-14 |
+| **Created** | 2026-02-20 |
 
 ## What's Inside?
 
@@ -28,10 +28,10 @@ The unified boost file contains **all data** needed for fast wallet synchronizat
 
 | Section | Count | Description |
 |---------|-------|-------------|
-| **Shielded Outputs** | 1,047,160 | Encrypted notes for trial decryption |
-| **Shielded Spends** | 436,413 | Nullifiers for spent note detection |
-| **Block Hashes** | 2,534,283 | For P2P header validation (Sapling onwards) |
-| **Block Timestamps** | 2,534,283 | For transaction date display |
+| **Shielded Outputs** | 1,047,595 | Encrypted notes for trial decryption |
+| **Shielded Spends** | 436,847 | Nullifiers for spent note detection |
+| **Block Hashes** | 2,541,056 | For P2P header validation (Sapling onwards) |
+| **Block Timestamps** | 2,541,056 | For transaction date display |
 | **Serialized Tree** | 510 bytes | Commitment tree state for instant load |
 | **Reliable Peers** | 4 | P2P bootstrap addresses |
 | **Block Headers** | 2,511,829 | FIX #413: Full headers with finalSaplingRoot for Tree Root Validation |
@@ -70,8 +70,8 @@ The unified boost file contains **all data** needed for fast wallet synchronizat
 [Header: 128 bytes]
 [Outputs Data: 1,043,793 × 684 = ~680.9 MB (includes received_in_tx)]
 [Spends Data: 433,151 × 68 = ~28.1 MB (includes txid)]
-[Hashes Data: 2,534,283 × 32 = ~77.3 MB]
-[Timestamps Data: 2,534,283 × 4 = ~9.7 MB]
+[Hashes Data: 2,541,056 × 32 = ~77.5 MB]
+[Timestamps Data: 2,541,056 × 4 = ~9.7 MB]
 [Tree Data: 478 bytes]
 [Peers Data: 195 bytes]
 [Headers Data: 2,475,168 × 140 = ~330.3 MB] (FIX #413)
@@ -95,11 +95,11 @@ All multi-byte integers are **little-endian** (matching wire format):
 
 | Section | Start Height | End Height | Notes |
 |---------|--------------|------------|-------|
-| Outputs | 476,969 | 3,011,251 | From Sapling activation |
-| Spends | 476,969 | 3,011,251 | From Sapling activation |
-| Hashes | 476,969 | 3,011,251 | From Sapling (no pre-Sapling hashes) |
-| Timestamps | 476,969 | 3,011,251 | From Sapling activation |
-| Tree | 476,969 | 3,011,251 | Sapling commitment tree |
+| Outputs | 476,969 | 3,018,024 | From Sapling activation |
+| Spends | 476,969 | 3,018,024 | From Sapling activation |
+| Hashes | 476,969 | 3,018,024 | From Sapling (no pre-Sapling hashes) |
+| Timestamps | 476,969 | 3,018,024 | From Sapling activation |
+| Tree | 476,969 | 3,018,024 | Sapling commitment tree |
 
 ## Verification
 
@@ -109,11 +109,11 @@ shasum -a 256 -c SHA256SUMS.txt
 
 # Or manually
 shasum -a 256 zipherx_boost_v1.bin
-# Expected: b30518b7a199454da197d40b3a43315c20b897fce0742c3214d9b2171a8997f7
+# Expected: 0572e6543d9e13deac7fdc11e25a4a1dc297a214181977de709510a66492829e
 
 # For compressed file:
 shasum -a 256 zipherx_boost_v1.bin.zst
-# Expected: b30518b7a199454da197d40b3a43315c20b897fce0742c3214d9b2171a8997f7
+# Expected: 0572e6543d9e13deac7fdc11e25a4a1dc297a214181977de709510a66492829e
 ```
 
 ## Usage
@@ -145,9 +145,9 @@ New wallets skip historical note scanning since there are no notes to find - onl
 | Property | Value |
 |----------|-------|
 | Sapling Activation | 476,969 |
-| Chain Height | 3,011,251 |
-| Block Hash | `000000aeeabd27e302ec3d2a4b51d0a42172a527acb71d66eed5d34aa667e2fb` |
-| Tree Root | `3c06a641a02fb8c27e7ff5ed6031613adb9678024edf6a88019e3545aa49cea9` |
+| Chain Height | 3,018,024 |
+| Block Hash | `00000331ae670ee1e894c9dd131331963a1d08b236eddf07b27056e6a032a5c8` |
+| Tree Root | `5b4d21d8a2e6ac146c4c0bc38135e6aa219019f2efefdc7a699fb7d2756c0b47` |
 
 ### Shielded Output Record (652 bytes)
 
@@ -174,9 +174,9 @@ struct ShieldedSpend {
 
 | Metric | Value |
 |--------|-------|
-| Generation Speed | 1,912 blocks/sec |
-| Total Blocks Scanned | 2,534,283 |
-| Generation Time | 22.1 minutes |
+| Generation Speed | 1,985 blocks/sec |
+| Total Blocks Scanned | 2,541,056 |
+| Generation Time | 21.3 minutes |
 | RPC Batch Size | 200 blocks |
 | Worker Threads | 16 |
 
