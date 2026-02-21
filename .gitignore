@@ -20,6 +20,9 @@ temp_*.bin
 build/
 dist/
 
+# Generator script (private — not for public distribution)
+generate_boost_file.py
+
 # Backups directory
 backups/
 
