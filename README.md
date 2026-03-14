@@ -18,13 +18,16 @@ A single, comprehensive blockchain data file for instant ZipherX wallet synchron
 |----------|-------|
 | **Format** | ZBOOST01 (Unified Binary) |
 | **Version** | 2 |
-| **Chain Height** | 3,032,466 |
-| **File Size** | 2058 MB (zstd, 2 parts), 2210 MB uncompressed (7% reduction) |
-| **Created** | 2026-03-05 |
+| **Chain Height** | 3,032,466 (shielded) / 3,042,526 (transparent) |
+| **Shielded Size** | 2058 MB (zstd, 2 parts), 2210 MB uncompressed |
+| **Transparent Size** | 25.6 MB (zstd), 95.5 MB uncompressed |
+| **Created** | 2026-03-05 (shielded), 2026-03-14 (transparent) |
 
 ## What's Inside?
 
-The unified boost file contains **all data** needed for fast wallet synchronization in a single download:
+### Shielded Boost (`zipherx_boost_v1.bin`)
+
+The unified boost file contains **all data** needed for fast shielded wallet synchronization in a single download:
 
 | Section | Count | Description |
 |---------|-------|-------------|
@@ -36,7 +39,60 @@ The unified boost file contains **all data** needed for fast wallet synchronizat
 | **Reliable Peers** | 4 | P2P bootstrap addresses |
 | **Block Headers** | 2,541,056 | Full headers with Equihash solutions for PoW verification |
 
-## File Format Specification
+### Transparent Boost (`zipherx_tboost_v1.bin`) — NEW
+
+A separate, lightweight file containing all unspent transparent outputs (UTXOs) for instant transparent address balance detection:
+
+| Property | Value |
+|----------|-------|
+| **Format** | ZTBOOST1 |
+| **Version** | 1 |
+| **Chain Height** | 3,042,526 |
+| **Unspent UTXOs** | 1,352,859 |
+| **P2PKH Outputs** | 1,352,160 |
+| **P2SH Outputs** | 606 |
+| **Other** | 93 |
+| **Total Value** | 10,353,924.04 ZCL |
+
+## Backward Compatibility
+
+The transparent boost is fully backward compatible:
+
+- **Old app versions** (without transparent support) download only the shielded boost parts and ignore the `"transparent"` section in the manifest. Nothing breaks.
+- **New app versions** download the shielded boost as before, plus the lightweight transparent boost file (26 MB). Transparent addresses are instantly populated from the UTXO snapshot, then peer-based sync covers the remaining blocks.
+- **Migration**: Existing users with the shielded boost already downloaded only need the small transparent boost file (~26 MB). The app downloads it automatically on next sync.
+
+## Transparent Boost File Format
+
+### Header (64 bytes)
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 8 | Magic | `ZTBOOST1` (ASCII) |
+| 8 | 4 | Version | Format version (1) |
+| 12 | 4 | Height | Chain height at generation (uint32 LE) |
+| 16 | 4 | Count | Number of UTXO entries (uint32 LE) |
+| 20 | 44 | Reserved | Padding for future use |
+
+### UTXO Entry (74 bytes)
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0 | 4 | Height | Block height (uint32 LE) |
+| 4 | 32 | TxID | Transaction hash (wire format, LE) |
+| 36 | 4 | Vout | Output index (uint32 LE) |
+| 40 | 8 | Value | Amount in zatoshis (uint64 LE) |
+| 48 | 1 | Script Len | scriptPubKey length (max 25) |
+| 49 | 25 | Script | scriptPubKey (zero-padded) |
+
+### Script Types
+
+| Type | Script Pattern | Length |
+|------|---------------|--------|
+| P2PKH | `OP_DUP OP_HASH160 <20-byte hash> OP_EQUALVERIFY OP_CHECKSIG` | 25 bytes |
+| P2SH | `OP_HASH160 <20-byte hash> OP_EQUAL` | 23 bytes |
+
+## Shielded Boost File Format
 
 ### Header (128 bytes)
 
@@ -72,33 +128,24 @@ All multi-byte integers are **little-endian** (matching wire format):
 - EPKs: Little-endian (wire format)
 - Nullifiers: Little-endian (wire format)
 - Block hashes: Little-endian (wire format, reversed from RPC display)
+- TxIDs: Little-endian (wire format, reversed from RPC display)
 - Integers: Little-endian (uint16, uint32, uint64)
 
 **Important**: RPC/API responses display hashes in big-endian. The file stores them in wire format (bytes reversed).
 
-## Height Ranges
-
-| Section | Start Height | End Height | Notes |
-|---------|--------------|------------|-------|
-| Outputs | 476,969 | 3,032,466 | From Sapling activation |
-| Spends | 476,969 | 3,032,466 | From Sapling activation |
-| Hashes | 476,969 | 3,032,466 | From Sapling (no pre-Sapling hashes) |
-| Timestamps | 476,969 | 3,032,466 | From Sapling activation |
-| Tree | 476,969 | 3,032,466 | Sapling commitment tree |
-
 ## Verification
 
 ```bash
-# Verify SHA256 checksum
+# Verify SHA256 checksums
 shasum -a 256 -c SHA256SUMS.txt
 
-# Or manually (uncompressed)
+# Or manually (shielded, uncompressed)
 shasum -a 256 zipherx_boost_v1.bin
 # Expected: 783c538fb4fc51bed1006d79746b71078e92ff69ede15ed051b0f2afde7e7d97
 
-# Compressed file:
-shasum -a 256 zipherx_boost_v1.bin.zst
-# Expected: 783c538fb4fc51bed1006d79746b71078e92ff69ede15ed051b0f2afde7e7d97
+# Transparent boost (uncompressed)
+shasum -a 256 zipherx_tboost_v1.bin
+# Expected: 651e7dfa9da43796482b408375c980174b4c4750ec16b66ab868cc05e9c771cc
 ```
 
 ## Usage
@@ -106,22 +153,40 @@ shasum -a 256 zipherx_boost_v1.bin.zst
 The ZipherX wallet automatically:
 
 1. Checks for updates on GitHub releases
-2. Downloads the unified file if newer version available
-3. Parses sections on-demand during sync
-4. Uses bundled data for instant wallet initialization
+2. Downloads the shielded boost file if newer version available
+3. Downloads the transparent boost file if transparent addresses are enabled
+4. Parses sections on-demand during sync
+5. Uses bundled data for instant wallet initialization
 
 ### For Imported Wallets
 
 When importing a private key, the wallet:
 
-1. Downloads the unified boost file (~2058 MB compressed, 2 parts)
-2. Uses parallel note decryption (Rayon) for fast scanning
-3. Computes nullifiers to detect spent notes
-4. Builds witnesses for spendable notes
+1. Downloads the shielded boost file (~2058 MB compressed, 2 parts)
+2. Downloads the transparent boost file (~26 MB compressed)
+3. Uses parallel note decryption (Rayon) for fast shielded scanning
+4. Matches UTXO scriptPubKeys against derived transparent addresses
+5. Computes nullifiers to detect spent notes
+6. Builds witnesses for spendable notes
 
 ### For New Wallets
 
-New wallets skip historical note scanning since there are no notes to find - only recent blocks are synced.
+New wallets skip historical scanning since there are no notes/UTXOs to find — only recent blocks are synced.
+
+## GitHub Release
+
+The boost files are distributed via GitHub Releases:
+
+- **Repository**: ZipherPunk/ZipherX_Boost
+- **Release Tag**: v3032466-unified
+- **Shielded**: zipherx_boost_v1.bin.zst.part1, zipherx_boost_v1.bin.zst.part2
+- **Transparent**: zipherx_tboost_v1.bin.zst
+- **Manifests**: zipherx_boost_manifest.json, zipherx_tboost_manifest.json
+- **Checksums**: SHA256SUMS.txt
+
+### Manifest Version
+
+The main manifest (`zipherx_boost_manifest.json`) uses **version 3** which includes an optional `"transparent"` section. Apps that don't support transparent boost simply ignore this field.
 
 ## Technical Details
 
@@ -130,7 +195,8 @@ New wallets skip historical note scanning since there are no notes to find - onl
 | Property | Value |
 |----------|-------|
 | Sapling Activation | 476,969 |
-| Chain Height | 3,032,466 |
+| Chain Height (Shielded) | 3,032,466 |
+| Chain Height (Transparent) | 3,042,526 |
 | Block Hash | `00000631dcd17928f58cb4350ba177c977fbde33e323fe56b2576ce20882e55f` |
 | Tree Root | `6f254f02aa127bb59faf0310136e7a2fd182b71d91b1ebfc3fd7e04db5d573d8` |
 
@@ -157,14 +223,19 @@ struct ShieldedSpend {
 }
 ```
 
-## GitHub Release
+### Transparent UTXO Record (74 bytes)
 
-The unified boost file is distributed via GitHub Releases:
-
-- **Repository**: ZipherPunk/ZipherX_Boost
-- **Release Tag**: v3018024-unified
-- **Files**: zipherx_boost_v1.bin.zst.part1, zipherx_boost_v1.bin.zst.part2, zipherx_boost_manifest.json, SHA256SUMS.txt
+```
+struct TransparentUtxo {
+    height: u32,           // 4 bytes - Block height
+    txid: [u8; 32],        // 32 bytes - Transaction hash (wire format)
+    vout: u32,             // 4 bytes - Output index
+    value: u64,            // 8 bytes - Amount in zatoshis
+    script_len: u8,        // 1 byte - scriptPubKey length
+    script: [u8; 25],      // 25 bytes - scriptPubKey (zero-padded)
+}
+```
 
 ---
 
-*ZipherX - Privacy is a right, not a privilege.*
+*ZipherX — Privacy is a right, not a privilege.*
